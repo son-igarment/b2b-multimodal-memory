@@ -11,6 +11,8 @@ class IngestTextRequest(BaseModel):
     interaction_id: Optional[str] = None
     timestamp: Optional[str] = None
     participants: Optional[List[str]] = None
+    org_id: Optional[str] = None
+    owner_id: Optional[str] = None
 
 
 class IngestResponse(BaseModel):
@@ -25,6 +27,8 @@ class SearchRequest(BaseModel):
     thread_id: Optional[str] = None
     date_from: Optional[str] = None
     date_to: Optional[str] = None
+    org_id: Optional[str] = None
+    owner_id: Optional[str] = None
 
 
 class ChunkResult(BaseModel):
@@ -50,6 +54,8 @@ class IngestEmailRequest(BaseModel):
     participants: Optional[List[str]] = None
     message_id: Optional[str] = None
     in_reply_to: Optional[str] = None
+    org_id: Optional[str] = None
+    owner_id: Optional[str] = None
 
 
 class IngestChatRequest(BaseModel):
@@ -62,5 +68,33 @@ class IngestChatRequest(BaseModel):
     timestamp: Optional[str] = None
     participants: Optional[List[str]] = None
     message_id: Optional[str] = None
+    org_id: Optional[str] = None
+    owner_id: Optional[str] = None
+
+
+class DeleteResponse(BaseModel):
+    id: str
+    deleted: bool
+
+
+class TimelineRequest(BaseModel):
+    customer_id: str
+    thread_id: Optional[str] = None
+    limit: int = Field(default=50, ge=1, le=200)
+    org_id: Optional[str] = None
+    owner_id: Optional[str] = None
+
+
+class TimelineItem(BaseModel):
+    id: str
+    timestamp: Optional[str] = None
+    channel: Optional[str] = None
+    title: Optional[str] = None
+    text: str
+    metadata: dict
+
+
+class TimelineResponse(BaseModel):
+    items: List[TimelineItem]
 
 

@@ -5,9 +5,9 @@ from fastapi import UploadFile
 from ..api.schemas import IngestTextRequest, IngestEmailRequest, IngestChatRequest
 from ..core.models import embed_texts
 from ..core.storage import upsert_vectors, upload_bytes, es_index_documents
-from .text_processor import clean_text, chunk_text
+from .text_processor import clean_text, chunk_text, summarize_stub, extract_entities_stub
 from .document_processor import extract_text_from_bytes
-from .audio_processor import transcribe_audio_stub
+from .audio_processor import transcribe_audio
 from .image_processor import extract_text_from_image
 
 
@@ -23,6 +23,10 @@ def execute_ingest_text(payload: IngestTextRequest) -> List[str]:
                 "channel": payload.channel,
                 "title": payload.title,
                 "text": chunk,
+                "org_id": payload.org_id,
+                "owner_id": payload.owner_id,
+                "summary": summarize_stub(chunk),
+                "entities": extract_entities_stub(chunk),
             }
         )
     ids = upsert_vectors(vectors, payloads)
@@ -47,6 +51,8 @@ async def execute_ingest_file(file: UploadFile) -> List[str]:
                 "file_name": file.filename,
                 "text": chunk,
                 "raw_content_path": s3_uri,
+                "summary": summarize_stub(chunk),
+                "entities": extract_entities_stub(chunk),
             }
         )
     ids = upsert_vectors(vectors, payloads)
@@ -100,6 +106,10 @@ def execute_ingest_email(payload: IngestEmailRequest) -> List[str]:
                 extra={
                     "message_id": payload.message_id,
                     "in_reply_to": payload.in_reply_to,
+                    "org_id": payload.org_id,
+                    "owner_id": payload.owner_id,
+                    "summary": summarize_stub(chunk),
+                    "entities": extract_entities_stub(chunk),
                 },
             )
         )
@@ -124,7 +134,13 @@ def execute_ingest_chat(payload: IngestChatRequest) -> List[str]:
                 interaction_id=payload.interaction_id,
                 timestamp=payload.timestamp,
                 participants=payload.participants,
-                extra={"platform": payload.platform},
+                extra={
+                    "platform": payload.platform,
+                    "org_id": payload.org_id,
+                    "owner_id": payload.owner_id,
+                    "summary": summarize_stub(chunk),
+                    "entities": extract_entities_stub(chunk),
+                },
             )
         )
     ids = upsert_vectors(vectors, payloads)
@@ -135,9 +151,12 @@ def execute_ingest_chat(payload: IngestChatRequest) -> List[str]:
 async def execute_ingest_audio(file: UploadFile) -> List[str]:
     raw_bytes: bytes = await file.read()
     s3_uri: str = upload_bytes(raw_bytes, object_name=file.filename or "audio.bin", content_type=file.content_type or "audio/mpeg")
-    text, _segments = transcribe_audio_stub(raw_bytes)
+    text, _segments = transcribe_audio(raw_bytes)
     cleaned: str = clean_text(text)
     chunks: List[str] = chunk_text(cleaned)
+    if not chunks:
+        # Không đẩy rỗng để tránh 500 do upstream lỗi
+        return []
     vectors: List[List[float]] = embed_texts(chunks)
     payloads = []
     for chunk in chunks:
@@ -149,6 +168,8 @@ async def execute_ingest_audio(file: UploadFile) -> List[str]:
                 "file_name": file.filename,
                 "text": chunk,
                 "raw_content_path": s3_uri,
+                "summary": summarize_stub(chunk),
+                "entities": extract_entities_stub(chunk),
             }
         )
     ids = upsert_vectors(vectors, payloads)
@@ -173,6 +194,8 @@ async def execute_ingest_image(file: UploadFile) -> List[str]:
                 "file_name": file.filename,
                 "text": chunk,
                 "raw_content_path": s3_uri,
+                "summary": summarize_stub(chunk),
+                "entities": extract_entities_stub(chunk),
             }
         )
     ids = upsert_vectors(vectors, payloads)

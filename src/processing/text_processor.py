@@ -29,3 +29,17 @@ def chunk_text(text: str, max_tokens: int = 512) -> List[str]:
     return chunks
 
 
+def summarize_stub(text: str, max_len: int = 200) -> str:
+    if not text:
+        return ""
+    return (text[:max_len] + "...") if len(text) > max_len else text
+
+
+def extract_entities_stub(text: str) -> List[str]:
+    if not text:
+        return []
+    # very naive: return unique capitalized tokens
+    tokens = {t.strip(",.;:!?()").strip() for t in text.split() if t[:1].isupper()}
+    return [t for t in tokens if t]
+
+

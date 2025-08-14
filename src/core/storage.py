@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+import io
 import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qm
@@ -99,10 +100,11 @@ def upload_bytes(content: bytes, object_name: str, content_type: str = "applicat
     ensure_bucket(settings.minio_bucket)
     client = get_minio()
     try:
+        data_stream = io.BytesIO(content) if isinstance(content, (bytes, bytearray)) else content
         client.put_object(
             bucket_name=settings.minio_bucket,
             object_name=object_name,
-            data=content,
+            data=data_stream,
             length=len(content),
             content_type=content_type,
         )
@@ -138,6 +140,8 @@ def _ensure_es_index(client) -> None:
         "mappings": {
             "properties": {
                 "customer_id": {"type": "keyword"},
+                "org_id": {"type": "keyword"},
+                "owner_id": {"type": "keyword"},
                 "channel": {"type": "keyword"},
                 "title": {"type": "text"},
                 "text": {"type": "text"},
@@ -145,6 +149,8 @@ def _ensure_es_index(client) -> None:
                 "interaction_id": {"type": "keyword"},
                 "timestamp": {"type": "date", "ignore_malformed": True},
                 "participants": {"type": "keyword"},
+                "summary": {"type": "text"},
+                "entities": {"type": "keyword"},
                 "raw_content_path": {"type": "keyword"},
                 "file_name": {"type": "keyword"},
                 "platform": {"type": "keyword"},
