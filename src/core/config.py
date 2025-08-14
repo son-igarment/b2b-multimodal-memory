@@ -19,6 +19,19 @@ class Settings(BaseSettings):
 
     api_port: int = 8080
 
+    # Elasticsearch (hybrid search)
+    es_url: str | None = None
+    es_username: str | None = None
+    es_password: str | None = None
+    es_index: str = "mm_memory"
+
+    # LLM for RAG
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
+
+    # OCR/STT configuration
+    tesseract_cmd: str | None = None
+
     class Config:
         env_file = ".env"
 
