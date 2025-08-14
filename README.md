@@ -8,6 +8,19 @@ Hệ thống bộ nhớ đa phương thức cho quy trình bán hàng B2B kéo d
 - Storage: Qdrant (vector), MinIO (object gốc), Elasticsearch (BM25 từ khóa) + payload metadata.
 - Retrieval: hybrid search (vector + keyword + rescoring) và tổng hợp câu trả lời kiểu RAG (OpenAI tùy chọn) có trích nguồn.
 
+## Công nghệ sử dụng
+- **Ngôn ngữ & Runtime**: Python 3.11+, Uvicorn (ASGI server)
+- **Web Framework**: FastAPI
+- **Vector Database**: Qdrant
+- **Object Storage**: MinIO (S3 compatible)
+- **Keyword Search**: Elasticsearch (BM25)
+- **Embeddings**: Sentence-Transformers
+- **OCR**: Tesseract OCR (cài native) + Pillow + pytesseract
+- **Document parsing**: pypdf, python-docx
+- **Audio STT**: stub (có thể thay bằng Whisper/faster-whisper)
+- **RAG/LLM**: OpenAI (qua `OPENAI_API_KEY`)
+- **Orchestration**: Docker Compose (Qdrant, MinIO, Elasticsearch)
+
 ## Cài đặt nhanh (Windows)
 1) Tạo `.env` (nếu bạn chưa có):
 ```powershell
