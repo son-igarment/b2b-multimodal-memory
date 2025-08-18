@@ -61,6 +61,7 @@ Hệ thống bộ nhớ đa phương thức cho quy trình bán hàng B2B kéo d
 - **Vector Database**: Qdrant
 - **Object Storage**: MinIO (S3 compatible)
 - **Keyword Search**: Elasticsearch (BM25)
+- **Relational Database**: PostgreSQL 15
 - **Caching**: Redis + In-memory cache
 - **Embeddings**: Sentence-Transformers
 - **OCR**: Tesseract OCR (cài native) + Pillow + pytesseract
@@ -68,7 +69,7 @@ Hệ thống bộ nhớ đa phương thức cho quy trình bán hàng B2B kéo d
 - **Audio STT**: stub (có thể thay bằng Whisper/faster-whisper)
 - **RAG/LLM**: OpenAI (qua `OPENAI_API_KEY`)
 - **Monitoring**: Prometheus + Grafana
-- **Orchestration**: Docker Compose (Qdrant, MinIO, Elasticsearch, Redis, Prometheus, Grafana)
+- **Orchestration**: Docker Compose (Qdrant, MinIO, Elasticsearch, Redis, PostgreSQL, Prometheus, Grafana)
 
 ## Cài đặt nhanh (Windows)
 1) Tạo `.env` (nếu bạn chưa có):
@@ -99,7 +100,7 @@ LOG_LEVEL=INFO
 LOG_FILE=logs/app.log
 ```
 
-2) Khởi động hạ tầng (Qdrant, MinIO, Elasticsearch, Redis, Prometheus, Grafana):
+2) Khởi động hạ tầng (Qdrant, MinIO, Elasticsearch, Redis, PostgreSQL, Prometheus, Grafana):
 ```powershell
 docker compose up -d
 ```
@@ -121,6 +122,7 @@ uvicorn src.api.main:app --reload --port 8080
 - **Grafana Dashboard**: http://localhost:3000 (admin/admin)
 - **Prometheus**: http://localhost:9090
 - **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
+- **PostgreSQL**: localhost:5432 (postgres/postgres123)
 
 ## Cấu trúc thư mục
 ```
@@ -182,6 +184,7 @@ b2b-multimodal-memory/
 - EMBEDDING_PROVIDER: `random` | `sentence` (cần cài sentence-transformers nếu dùng)
 - MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET, MINIO_SECURE
 - ES_URL, ES_INDEX, (ES_USERNAME/ES_PASSWORD nếu bật security)
+- POSTGRES_URL: PostgreSQL connection string (mặc định: postgresql://postgres:postgres123@localhost:5432/b2b_memory)
 - REDIS_URL: Redis connection string
 - OPENAI_API_KEY, OPENAI_MODEL (mặc định `gpt-4o-mini`)
 - LOG_LEVEL: Logging level (DEBUG, INFO, WARNING, ERROR)
@@ -229,6 +232,10 @@ b2b-multimodal-memory/
   - Đặt `OPENAI_API_KEY` trong `.env`. Nếu không có, hệ thống dùng fallback (trả về top match trích nguồn).
 - Hybrid search:
   - Khi có `ES_URL`, hệ thống tự tạo index và index dữ liệu vào Elasticsearch (BM25) song song Qdrant.
+- PostgreSQL:
+  - Database `b2b_memory` tự động được tạo khi container khởi động
+  - Có thể kết nối qua pgAdmin4 hoặc bất kỳ PostgreSQL client nào
+  - Credentials mặc định: username=postgres, password=postgres123, database=b2b_memory
 - Monitoring:
   - Prometheus metrics endpoint: `/metrics`
   - Grafana dashboard: http://localhost:3000 với default credentials admin/admin
@@ -236,7 +243,8 @@ b2b-multimodal-memory/
 ## Khắc phục sự cố nhanh
 - `docker: not recognized` → Cài Docker Desktop, mở app cho chạy, mở PowerShell mới, kiểm tra `docker --version`.
 - `tesseract not found` → Cài Tesseract và đặt `TESSERACT_CMD` đúng, khởi động lại API.
-- Lỗi kết nối Qdrant/ES/MinIO → kiểm tra `docker compose ps`, các cổng `6333/9000/9200/6379/9090/3000` đang lắng nghe.
+- Lỗi kết nối Qdrant/ES/MinIO/PostgreSQL → kiểm tra `docker compose ps`, các cổng `6333/9000/9200/6379/5432/9090/3000` đang lắng nghe.
+- PostgreSQL connection issues → Kiểm tra container đang chạy, database `b2b_memory` đã được tạo.
 - Cache issues → Kiểm tra `/admin/cache/stats` và clear cache nếu cần.
 - Performance issues → Monitor qua Grafana dashboard.
 
